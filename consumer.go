@@ -10,6 +10,7 @@ import (
 
 	bassoon "github.com/MaxencePPierre/effective-bassoon/message"
 	"github.com/nsqio/go-nsq"
+	zlog "github.com/rs/zerolog/log"
 )
 
 type messageHandler struct{}
@@ -37,13 +38,16 @@ func main() {
 	//Creating the consumer
 	consumer, err := nsq.NewConsumer(bassoon.Topic, channel, config)
 	if err != nil {
-		log.Fatal(err)
+		zlog.Fatal().Err(err).Msg("Failed to create new consumer")
 	}
 
 	// Set the Handler for messages received by this Consumer.
 	consumer.AddHandler(&messageHandler{})
 	//Use nsqlookupd to find nsqd instances
-	consumer.ConnectToNSQLookupd(localhost + ":" + port)
+	err = consumer.ConnectToNSQLookupd(localhost + ":" + port)
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("Connection failed")
+	}
 
 	// wait for signal to exit
 	sigChan := make(chan os.Signal, 1)
